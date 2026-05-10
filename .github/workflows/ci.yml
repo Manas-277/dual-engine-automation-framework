@@ -1,0 +1,72 @@
+name: Dual Engine CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-playwright:
+    runs-on: ubuntu-latest
+    name: Run Tests (Playwright)
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Create config.py from secrets
+        run: |
+          echo "BASE_URL = 'https://automationexercise.com'" > config.py
+          echo "VALID_USER = {'email': '${{ secrets.TEST_EMAIL }}', 'password': '${{ secrets.TEST_PASSWORD }}'}" >> config.py
+          echo "INVALID_USER = {'email': 'fake@notexist.com', 'password': 'wrongpass'}" >> config.py
+
+      - name: Run Playwright tests
+        run: pytest --engine=playwright --html=reports/report_playwright.html -v
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: report-playwright
+          path: |
+            reports/report_playwright.html
+            reports/screenshots/
+
+  test-selenium:
+    runs-on: ubuntu-latest
+    name: Run Tests (Selenium)
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create config.py from secrets
+        run: |
+          echo "BASE_URL = 'https://automationexercise.com'" > config.py
+          echo "VALID_USER = {'email': '${{ secrets.TEST_EMAIL }}', 'password': '${{ secrets.TEST_PASSWORD }}'}" >> config.py
+          echo "INVALID_USER = {'email': 'fake@notexist.com', 'password': 'wrongpass'}" >> config.py
+
+      - name: Run Selenium tests
+        run: pytest --engine=selenium --html=reports/report_selenium.html -v
+
+      - name: Upload Selenium report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: report-selenium
+          path: reports/report_selenium.html
