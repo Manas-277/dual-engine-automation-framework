@@ -28,6 +28,7 @@ def driver(engine, request):
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         drv = webdriver.Chrome(options=options)
+        drv.implicitly_wait(10)
         yield drv
         drv.quit()
     elif engine == "playwright":
